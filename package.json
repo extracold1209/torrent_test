@@ -1,0 +1,20 @@
+{
+    "name": "torrent",
+    "version": "1.0.0",
+    "main": "server.js",
+    "author": "extracold1209 <extracold1209@gmail.com>",
+    "license": "MIT",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "devDependencies": {
+        "bencode": "^2.0.1",
+        "express": "^4.17.1"
+    },
+    "dependencies": {
+        "@types/express": "^4.17.2",
+        "@types/node": "^13.5.0",
+        "eslint": "^6.8.0",
+        "typescript": "^3.7.5"
+    }
+}
