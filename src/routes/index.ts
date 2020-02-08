@@ -18,7 +18,9 @@ const decodeInfohash = (infoHash: string) => {
 
 router.get('/announce', (req, res) => {
     const { info_hash, peer_id, port, uploaded, downloaded, left, numwant, key, compact, supportcrypto, event } = req.query;
-    const response = tracker.announce(Object.assign(req.query, {info_hash: decodeInfohash(info_hash)}));
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log(ip);
+    const response = tracker.announce(Object.assign(req.query, {info_hash: decodeInfohash(info_hash), ip}));
     console.log(response);
     res.send(bencode.encode(response));
 });
