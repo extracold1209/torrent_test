@@ -1,5 +1,6 @@
-import Torrent from "./torrent";
-import Peer, { PeerDictionary } from "./peer";
+import Torrent from './torrent';
+import { reduce } from 'lodash';
+import Peer, { PeerDictionary } from './peer';
 
 enum PeerEvent {
     started = 'started',
@@ -37,6 +38,19 @@ type TrackerFailResponseParams = {
     'failure reason': string;
 }
 
+type TrackerScrapeResponse = {
+    files: {
+        [infoHash: string]: TrackerScrapeTorrentInfo
+    }
+}
+
+type TrackerScrapeTorrentInfo = {
+    complete: number; // seeder
+    downloaded: number; // event complete peers in infoHash
+    incomplete: number; // leecher amount
+    name?: string; // .torrent file name
+}
+
 export const decodeInfoHash = (infoHash: string) => {
     return unescape(infoHash)
         .split('')
@@ -68,6 +82,34 @@ class Tracker {
         const torrent = this.getOrCreateTorrent(info_hash);
         this.handlePeerEvent(torrent, request);
         return this.generateTrackerResponse(torrent);
+    }
+
+    public scrape(infoHashes: string | string[]): TrackerScrapeResponse {
+        const infoHashArray = Array.isArray(infoHashes) ? infoHashes : [infoHashes];
+
+        return reduce<string, TrackerScrapeResponse>(infoHashArray, (result, infoHash) => {
+            const decodedInfoHash = decodeInfoHash(infoHash);
+            const torrent = this.torrentSwarm[decodedInfoHash];
+
+            let torrentPeerInfo = {
+                complete: 0,
+                incomplete: 0,
+                downloaded: 0,
+            };
+
+            if (torrent) {
+                const {complete, incomplete} = torrent.getPeerState();
+                const downloaded = torrent.getCompleteCount();
+                torrentPeerInfo = {
+                    complete,
+                    incomplete,
+                    downloaded,
+                }
+            }
+
+            result.files[decodedInfoHash] = torrentPeerInfo;
+            return result;
+        }, {files: {}})
     }
 
     private validateRequest(request: TrackerRequestParams): TrackerFailResponseParams | undefined {
@@ -106,6 +148,7 @@ class Tracker {
                 torrent.removePeer(peer_id);
                 break;
             case PeerEvent.completed:
+                torrent.increaseCompleteCount();
                 console.log(`PeerId[${peer_id}], infoHash[${info_hash}] is completed`);
                 break;
         }

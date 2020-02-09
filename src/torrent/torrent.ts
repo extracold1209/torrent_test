@@ -3,6 +3,7 @@ import { countBy } from 'lodash';
 
 class Torrent {
     public readonly infoHash: string;
+    private completeEventPeers = 0;
     private readonly peers: Peer[];
 
     constructor(infoHash: string) {
@@ -47,13 +48,13 @@ class Torrent {
         return this.peers.map((peer) => peer.toDictionary()) || [];
     }
 
-    // getCompletePeers() {
-    //     return this.peers.filter((peer) => peer.getPeerType() === PeerType.seeder);
-    // }
-    //
-    // getInCompletePeers() {
-    //
-    // }
+    increaseCompleteCount() {
+        this.completeEventPeers++;
+    }
+
+    getCompleteCount() {
+        return this.completeEventPeers;
+    }
 }
 
 export default Torrent;
