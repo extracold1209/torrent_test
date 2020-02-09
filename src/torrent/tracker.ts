@@ -37,9 +37,20 @@ type TrackerFailResponseParams = {
     'failure reason': string;
 }
 
+export const decodeInfoHash = (infoHash: string) => {
+    return unescape(infoHash)
+        .split('')
+        .map((e) => {
+            const c = e.charCodeAt(0);
+            return (c < 10 ? '0' : '') + c.toString(16).toUpperCase()
+        })
+        .join('');
+};
 
 class Tracker {
-    private trackerId: string = 'helloWorldTestTracker';
+    private TRACKER_ID: string = 'helloWorldTestTracker';
+    private TRACKER_ANNOUNCE_INTERVAL: number = 30;
+
     private readonly torrentSwarm: { [infoHash: string]: Torrent };
 
     constructor() {
@@ -49,17 +60,37 @@ class Tracker {
     public announce(request: TrackerRequestParams) {
         const { info_hash } = request;
 
+        const failResponse = this.validateRequest(request);
+        if (failResponse) {
+            return failResponse;
+        }
+
         const torrent = this.getOrCreateTorrent(info_hash);
         this.handlePeerEvent(torrent, request);
         return this.generateTrackerResponse(torrent);
     }
 
-    private getOrCreateTorrent(infoHash: string) {
-        if (this.torrentSwarm[infoHash]) {
-            return this.torrentSwarm[infoHash];
+    private validateRequest(request: TrackerRequestParams): TrackerFailResponseParams | undefined {
+        if (!request.ip){
+            return this.generateTrackerFailResponse('IP not found');
+        }
+        if (!request.info_hash || request.info_hash.length !== 20) {
+            return this.generateTrackerFailResponse('invalid info_hash');
+        }
+        if (!request.peer_id || request.peer_id.length !== 20) {
+            return this.generateTrackerFailResponse('invalid peer_id');
+        }
+        if (!request.port) {
+            return this.generateTrackerFailResponse('invalid port');
+        }
+    }
+
+    private getOrCreateTorrent(decodedInfoHash: string) {
+        if (this.torrentSwarm[decodedInfoHash]) {
+            return this.torrentSwarm[decodedInfoHash];
         } else {
-            const torrent = new Torrent(infoHash);
-            this.torrentSwarm[infoHash] = torrent;
+            const torrent = new Torrent(decodedInfoHash);
+            this.torrentSwarm[decodedInfoHash] = torrent;
             return torrent;
         }
     }
@@ -84,17 +115,21 @@ class Tracker {
         const result = torrent.getPeerState();
         const { complete = 0, incomplete = 0 } = result;
         const peers = torrent.getAllPeersDictionary();
-        const interval = 30;
 
         return {
-            interval,
-            'tracker id': this.trackerId,
+            interval: this.TRACKER_ANNOUNCE_INTERVAL,
+            'tracker id': this.TRACKER_ID,
             complete,
             incomplete,
             peers
         }
     }
 
+    private generateTrackerFailResponse(errorMessage: string): TrackerFailResponseParams {
+        return {
+            'failure reason': errorMessage,
+        }
+    }
 }
 
 export default Tracker;
