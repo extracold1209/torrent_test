@@ -1,5 +1,9 @@
 import express from 'express';
 import routes from './routes';
+import debug from 'debug';
+import { AddressInfo } from "net";
+
+const log = debug('index');
 
 const app = express();
 
@@ -9,6 +13,12 @@ app.get('/l7check', (req, res) => {
     res.send('OK')
 });
 
-app.listen(8080, () => {
-    console.log('server opened');
+app.get('*', (req, res) => {
+    log(req);
+    res.send('hello?');
+});
+
+const server = app.listen(8080, () => {
+    const { address, port } = server.address() as AddressInfo;
+    log('Server now listening. port %s:%s', address, port);
 });

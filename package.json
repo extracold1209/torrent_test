@@ -5,7 +5,7 @@
     "author": "extracold1209 <extracold1209@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "start": "tsc &&cross-env DEBUG=true node dist/index.js"
+        "start": "tsc &&cross-env DEBUG=*,-express:* node dist/index.js"
     },
     "devDependencies": {
         "@types/bencode": "^2.0.0",

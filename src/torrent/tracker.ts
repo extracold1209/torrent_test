@@ -11,7 +11,7 @@ enum PeerEvent {
     completed = 'completed',
 }
 
-type TrackerRequestParams = {
+export type TrackerRequestParams = {
     info_hash: string;
     peer_id: string;
     port: string; // to be number
@@ -27,7 +27,7 @@ type TrackerRequestParams = {
     trackerid?: string; // previous tracker id
 }
 
-type TrackerResponseParams = {
+export type TrackerResponseParams = {
     'warning message'?: string;
     interval: number;
     'min interval'?: number;
@@ -75,9 +75,9 @@ class Tracker {
     }
 
     public announce(request: TrackerRequestParams) {
-        const { info_hash } = request;
+        const { info_hash, ip, port, peer_id } = request;
 
-        log('announce requested %s', info_hash);
+        log('announce requested info_hash: %s, peer: %s', info_hash, `${peer_id}|${ip}:${port}`);
 
         const failResponse = this.validateRequest(request);
         if (failResponse) {
@@ -156,6 +156,9 @@ class Tracker {
             case PeerEvent.completed:
                 torrent.completePeer(this.generateNewPeer(request));
                 break;
+            default:
+                torrent.removePeer(peer_id);
+                break;
         }
     }
 
@@ -179,7 +182,7 @@ class Tracker {
         }
     }
 
-    private generateNewPeer({peer_id, ip, port, left}: TrackerRequestParams) {
+    private generateNewPeer({ peer_id, ip, port, left }: TrackerRequestParams) {
         return new Peer(peer_id, ip, port, left);
     }
 }
