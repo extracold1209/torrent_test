@@ -36,8 +36,12 @@ class Peer {
         this.setPeerType();
     }
 
-    private setPeerType() {
-        this.peerType = this.left > 0 ? PeerType.leecher : PeerType.seeder;
+    public setPeerType(type?: PeerType) {
+        if (type) {
+            this.peerType = type;
+        } else {
+            this.peerType = this.left > 0 ? PeerType.leecher : PeerType.seeder;
+        }
     }
 
     public getPeerType() {

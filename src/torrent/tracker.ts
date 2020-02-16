@@ -1,6 +1,9 @@
 import Torrent from './torrent';
 import { reduce } from 'lodash';
 import Peer, { PeerDictionary } from './peer';
+import debug from 'debug';
+
+const log = debug('Tracker');
 
 enum PeerEvent {
     started = 'started',
@@ -74,8 +77,11 @@ class Tracker {
     public announce(request: TrackerRequestParams) {
         const { info_hash } = request;
 
+        log('announce requested %s', info_hash);
+
         const failResponse = this.validateRequest(request);
         if (failResponse) {
+            log('%s announce failed with [%s]', info_hash, failResponse["failure reason"]);
             return failResponse;
         }
 
@@ -138,18 +144,17 @@ class Tracker {
     }
 
     private handlePeerEvent(torrent: Torrent, request: TrackerRequestParams) {
-        const { event, peer_id, ip, port, left, info_hash } = request;
+        const { event, peer_id } = request;
 
         switch (event) {
             case PeerEvent.started:
-                torrent.addPeer(new Peer(peer_id, ip, port, left));
+                torrent.addPeer(this.generateNewPeer(request));
                 break;
             case PeerEvent.stopped:
                 torrent.removePeer(peer_id);
                 break;
             case PeerEvent.completed:
-                torrent.increaseCompleteCount();
-                console.log(`PeerId[${peer_id}], infoHash[${info_hash}] is completed`);
+                torrent.completePeer(this.generateNewPeer(request));
                 break;
         }
     }
@@ -172,6 +177,10 @@ class Tracker {
         return {
             'failure reason': errorMessage,
         }
+    }
+
+    private generateNewPeer({peer_id, ip, port, left}: TrackerRequestParams) {
+        return new Peer(peer_id, ip, port, left);
     }
 }
 
