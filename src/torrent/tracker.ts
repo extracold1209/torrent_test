@@ -98,7 +98,7 @@ class Tracker {
             };
 
             if (torrent) {
-                const {complete, incomplete} = torrent.getPeerState();
+                const { complete, incomplete } = torrent.getPeerState();
                 const downloaded = torrent.getCompleteCount();
                 torrentPeerInfo = {
                     complete,
@@ -109,14 +109,14 @@ class Tracker {
 
             result.files[decodedInfoHash] = torrentPeerInfo;
             return result;
-        }, {files: {}})
+        }, { files: {} })
     }
 
     private validateRequest(request: TrackerRequestParams): TrackerFailResponseParams | undefined {
-        if (!request.ip){
+        if (!request.ip) {
             return this.generateTrackerFailResponse('IP not found');
         }
-        if (!request.info_hash || request.info_hash.length !== 20) {
+        if (!request.info_hash || request.info_hash.length !== 40) { // hex 20 bytes
             return this.generateTrackerFailResponse('invalid info_hash');
         }
         if (!request.peer_id || request.peer_id.length !== 20) {
@@ -138,9 +138,9 @@ class Tracker {
     }
 
     private handlePeerEvent(torrent: Torrent, request: TrackerRequestParams) {
-        const {event, peer_id, ip, port, left, info_hash} = request;
+        const { event, peer_id, ip, port, left, info_hash } = request;
 
-        switch(event) {
+        switch (event) {
             case PeerEvent.started:
                 torrent.addPeer(new Peer(peer_id, ip, port, left));
                 break;

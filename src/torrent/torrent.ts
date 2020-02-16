@@ -12,7 +12,12 @@ class Torrent {
     }
 
     addPeer(peer: Peer) {
-        this.peers.push(peer);
+        const existPeerIndex = this.peers.findIndex((prevPeer) => prevPeer.peerId === peer.peerId);
+        if (existPeerIndex >= 0) {
+            this.peers[existPeerIndex] = peer
+        } else {
+            this.peers.push(peer);
+        }
     }
 
     removePeer(peer: Peer | string) {
@@ -20,7 +25,7 @@ class Torrent {
             ? this.peers.indexOf(peer)
             : this.peers.findIndex((targetPeer) => targetPeer.peerId === peer);
 
-        if (targetPeerIndex > 0) {
+        if (targetPeerIndex >= 0) {
             this.peers.splice(targetPeerIndex, 1);
         } else {
             console.warn('remove peer failed. peerId not exist in ' + this.infoHash);
